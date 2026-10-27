@@ -4,7 +4,7 @@ Static GitHub Pages slideshow for the office TV. Twenty-two silent 15-second cli
 
 The TV opens <https://ross680.github.io/Veterans-Day-Office-Board/>.
 
-It follows the same full-screen board as the [Christmas Board](https://github.com/ross680/Christmas-Office-Board), the [Motivational Board](https://github.com/ross680/Motivational-Board), and the [Halloween Board](https://github.com/ross680/Halloween-Board): one stage, a thin progress bar, hover controls, a screen wake lock, and a reload so a TV left on overnight picks up changes. Clips live in `assets/clips/`.
+It follows the same full-screen board as the [Christmas Board](https://github.com/ross680/Christmas-Office-Board), the [Motivational Board](https://github.com/ross680/Motivational-Board), and the [Halloween Board](https://github.com/ross680/Halloween-Board): one stage, a thin progress bar, controls that appear when someone moves the pointer, a screen wake lock, and a reload so a TV left on for weeks picks up changes. Clips live in `assets/clips/`.
 
 ## Publish on GitHub Pages
 
@@ -16,7 +16,7 @@ The page is a normal static site. It does not call the GitHub API.
 4. Branch: **main**. Folder: **/** (root).
 5. Open <https://ross680.github.io/Veterans-Day-Office-Board/> on the TV browser.
 
-Pages can take a minute after the push. The TV may keep the previous `index.html` for about 10 minutes. The board also reloads itself every 4 hours, after the current clip finishes, so a new playlist shows up on its own.
+Pages can take a minute after the push. The TV may keep the previous `index.html` for about 10 minutes. The board reloads itself every 4 hours, after the current clip finishes, and again about 15 minutes later if that ending never comes. The reload URL carries a fresh `v=` value so the TV asks for the new page instead of a cached copy.
 
 `.nojekyll` is in the repo so Pages serves the files as they are.
 
@@ -26,14 +26,13 @@ Right arrow or Space: next · Left arrow: previous · P: pause · M: sound on/of
 
 Clips start muted so Chrome and TV browsers allow autoplay. M, or the sound button, turns sound on. The clips in this set are silent.
 
-Hover the picture to see the controls and the clip count (`3 / 22`). The days-until-Veterans-Day chip stays in the corner. It counts down to Wednesday, November 11, 2026, in America/New_York, and reads `15 DAYS UNTIL VETERANS DAY` on October 27. On November 11 it reads `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`, and it keeps that thank-you after the day has passed. The day before, it reads `1 DAY UNTIL VETERANS DAY`.
+Move the pointer to see the controls and the clip count (`3 / 22`). The cursor and the controls hide again after a few seconds of idle. The days-until-Veterans-Day chip stays in the corner. It counts down to Wednesday, November 11, 2026, in America/New_York, and reads `15 DAYS UNTIL VETERANS DAY` on October 27. The chip refreshes at most once a minute, including across midnight. On November 11 it reads `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`, and it keeps that thank-you after the day has passed. The day before, it reads `1 DAY UNTIL VETERANS DAY`.
 
 ## URL options
 
-- `?reload=4` reloads every 4 hours (the default), after the current clip ends. `?reload=0` turns that off. The board checks once a minute, because some TV browsers drop one long timer.
+- `?reload=4` reloads every 4 hours (the default), after the current clip ends. `?reload=0` turns that off. `?hard=15` is how many minutes after that deadline the page reloads even if the clip never ends (the default, so about 4 hours 15 minutes).
 - `?maxclip=60` is a hard cap per video, in seconds (default 60). A normal clip ends itself first.
-- `?stall=20` skips a clip with no playback progress for 20 seconds.
-- `?watchdog=90` if the reel makes no progress for 90 seconds, the page reloads once. If it just reloaded and is still stuck, it waits a minute instead of reboot-looping.
+- `?stall=8` skips a clip whose playback time has not moved for 8 seconds (the default). An error, a real abort, or three of those failures in a row reloads the page. One bad file is skipped and the loop continues. If the network is down, the board keeps trying cached clips instead of navigating to an error page.
 - `?shuffle=1` randomizes the order when the page loads.
 - `?slide=3` starts on that clip (1 is the first).
 - `?date=2026-11-11` previews the countdown for that calendar day.
@@ -54,13 +53,17 @@ Renaming a file does not change the order. The list does.
 
 When you replace a file and keep the same name, change the `?v=` text on that line (any new string). That is the cache buster, same idea as the Halloween board. Leave `?v=` alone when the bytes did not change, or the TV downloads the clip again for no reason.
 
-`app.js` is linked with `?v=20261027a` and `styles.css` with `?v=20261027b`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy. You do not need to touch it when you only edit `clips.js`.
+`app.js` and `styles.css` are linked with `?v=20261027c`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy. You do not need to touch it when you only edit `clips.js`.
 
 ## Keeping the picture moving
 
-One `<video>` element is reused. Each clip is detached (`pause`, clear `src`, `load()`) before the next one so the TV can free the decoder.
+One `<video>` element is reused. Nothing else creates a second player. Each clip is detached (`pause`, `src` cleared, `load()`) before the next one so the TV can free the decoder. Media listeners are registered once, not on every clip.
 
-After the scheduled reload the page resumes on the next clip, rather than jumping back to the first one.
+A clip that does not advance for about 8 seconds, or that errors, is skipped. Three skips in a row with no successful playback reload the page. That reload is suppressed for a few minutes if one just happened, so a bad file cannot reboot the TV in a loop. While the network is down the same loop keeps going from cache, and coming back online resumes playback.
+
+The screen wake lock is requested where the browser allows it, including again when the page becomes visible. The countdown and the stall check pause while the document is hidden.
+
+After the scheduled reload the page resumes on the next clip, rather than jumping back to the first one. The reload address includes `v=` set to the current time so a new deploy is not stuck behind a cached `index.html`.
 
 ## Encoding
 

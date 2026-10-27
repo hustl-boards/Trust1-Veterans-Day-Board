@@ -19,9 +19,9 @@ body{font-family:Georgia,"Palatino Linotype",Palatino,"Times New Roman",Times,se
 #countdown.long{font-size:22px;letter-spacing:.045em}
 #counter{position:absolute;right:18px;top:14px;z-index:5;padding:7px 10px;border:1px solid var(--gold);box-shadow:0 0 0 1px rgba(8,13,24,.92),0 0 0 2px var(--gold-deep);border-radius:2px;background:rgba(12,18,32,.88);color:var(--cream);font-family:Georgia,"Palatino Linotype",Palatino,"Times New Roman",Times,serif;font-size:13px;font-weight:700;letter-spacing:.08em;opacity:0;transition:opacity .2s}
 #controls{position:absolute;left:50%;bottom:24px;z-index:5;transform:translateX(-50%);display:flex;gap:8px;opacity:0;transition:opacity .2s}
-#controls button{width:44px;height:38px;border-radius:2px;border:1px solid var(--gold);box-shadow:0 0 0 1px rgba(8,13,24,.92),0 0 0 2px var(--gold-deep);background:rgba(12,18,32,.9);color:var(--cream);font-family:Georgia,"Palatino Linotype",Palatino,"Times New Roman",Times,serif;font-size:17px;cursor:pointer}
-#stage:hover{cursor:default}
-#stage:hover #controls,#stage:hover #counter{opacity:1}
+#controls button{width:44px;height:38px;border-radius:2px;border:1px solid var(--gold);box-shadow:0 0 0 1px rgba(8,13,24,.92),0 0 0 2px var(--gold-deep);background:rgba(12,18,32,.9);color:var(--cream);font-family:Georgia,"Palatino Linotype",Palatino,"Times New Roman",Times,serif;font-size:17px;cursor:inherit}
+#stage.awake{cursor:default}
+#stage.awake #controls,#stage.awake #counter{opacity:1}
 @media (max-width:700px){
   #countdown{font-size:14px;padding:8px 10px;left:12px;top:12px;white-space:normal}
   #countdown.long{font-size:13px}

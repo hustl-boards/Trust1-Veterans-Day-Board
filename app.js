@@ -1,6 +1,8 @@
 (() => {
   // Office TV board. One video element is reused. The playlist is clips.js.
-  // There is no GitHub API call. Clips play to the end, muted, so Chrome autoplay works.
+  // There is no GitHub API call and no second preload element. Clips play to
+  // the end, muted, so Chrome autoplay works. Listeners and timers are created
+  // once; a clip change only swaps the source on the same element.
   const params = new URLSearchParams(location.search);
 
   function num(key, fallback, min, max) {
@@ -13,12 +15,16 @@
   }
 
   const maxClip = num('maxclip', 60, 10, 600);
-  const stallSeconds = num('stall', 20, 5, 120);
-  const watchdogSeconds = num('watchdog', 90, 20, 600);
+  const stallSeconds = num('stall', 8, 5, 120);
   const reloadHours = num('reload', 4, 0, 168);
+  const hardMinutes = num('hard', 15, 0.05, 240);
   const fresh = params.get('fresh') === '1';
   const debug = params.get('debug') === '1';
+  const IDLE_MS = 3000;
+  const PULSE_MS = 1000;
+  const FAILURES_BEFORE_RELOAD = 3;
 
+  const stage = document.getElementById('stage');
   const vid = document.getElementById('vid');
   const bar = document.querySelector('#progress span');
   const counter = document.getElementById('counter');
@@ -70,14 +76,18 @@
   let failedGen = -1;
   let reloading = false;
   let reloadDue = false;
-  let timer = 0;
-  let stallTimer = 0;
+  let reloadDeferred = '';
+  let switching = false;
+  let countdownTimer = 0;
+  let idleTimer = 0;
   let lastGood = Date.now();
   let lastMediaTime = -1;
+  let clipStarted = 0;
   let sawFrame = false;
   let wakeLock = null;
   const booted = Date.now();
-  const reloadAt = reloadHours > 0 ? Date.now() + reloadHours * 3600 * 1000 : 0;
+  const reloadAt = reloadHours > 0 ? booted + reloadHours * 3600 * 1000 : 0;
+  const hardReloadAt = reloadAt ? reloadAt + hardMinutes * 60 * 1000 : 0;
 
   function note(msg) {
     store.set('vb_err', new Date().toLocaleTimeString() + ' ' + msg);
@@ -146,107 +156,96 @@
     publish();
   }
 
+  function scheduleCountdown() {
+    countdownTimer = clearTimer(countdownTimer);
+    if (document.hidden) return;
+    countdownTimer = setTimeout(() => {
+      countdownTimer = 0;
+      if (document.hidden) return;
+      paintCountdown();
+      scheduleCountdown();
+    }, 60 * 1000);
+  }
+
   function publish() {
     window.__board = {
       index: index,
       count: clips.length,
       src: clips.length ? clips[index] : '',
       paused: paused,
-      days: daysUntilVeteransDay(activeParts())
+      days: daysUntilVeteransDay(activeParts()),
+      failures: failures,
+      reloadDue: reloadDue
     };
+  }
+
+  function discardElement(el) {
+    if (!el) return;
+    try { el.pause(); } catch (e) {}
+    // Abort the fetch and drop the decoder. removeAttribute avoids assigning
+    // src='', which resolves against the page URL and loads the board as media.
+    // A stray preload element still gets src='' plus load(), then is removed.
+    try { el.src = ''; } catch (e) {}
+    el.removeAttribute('src');
+    try { el.load(); } catch (e) {}
   }
 
   function releaseVideo() {
     // Detach the decoder before the next clip. expectedSrc is cleared first so
     // the error some TVs fire when src is removed does not count as a bad file.
+    switching = true;
     expectedSrc = '';
-    vid.onended = null;
-    vid.onerror = null;
-    vid.onplaying = null;
     try { vid.pause(); } catch (e) {}
     vid.classList.remove('on');
     vid.removeAttribute('src');
     try { vid.load(); } catch (e) {}
+    const extras = document.getElementsByTagName('video');
+    for (let n = extras.length - 1; n >= 0; n--) {
+      if (extras[n] === vid) continue;
+      discardElement(extras[n]);
+      if (extras[n].parentNode) extras[n].parentNode.removeChild(extras[n]);
+    }
   }
 
-  function armStall(gen) {
-    stallTimer = clearTimer(stallTimer);
-    stallTimer = setTimeout(() => {
-      if (gen !== generation || paused) return;
-      recover('stalled ' + labelOf(clips[index]));
-    }, stallSeconds * 1000);
+  function bustedLocation() {
+    try {
+      const url = new URL(location.href);
+      url.searchParams.set('v', String(Date.now()));
+      return url.toString();
+    } catch (e) {
+      const join = location.href.indexOf('?') === -1 ? '?' : '&';
+      return location.href + join + 'v=' + Date.now();
+    }
   }
 
-  function armMax(gen) {
-    timer = clearTimer(timer);
-    timer = setTimeout(() => {
-      if (gen !== generation || paused) return;
-      advance(gen);
-    }, maxClip * 1000);
+  function failureReload(reason) {
+    return reason.indexOf('fail') === 0;
   }
 
-  function playClip(gen) {
-    let ret;
-    try { ret = vid.play(); } catch (e) { ret = Promise.reject(e); }
-    // Older TV browsers return undefined from play(). Calling .then on that
-    // throws, and a throw here used to reload the Halloween board in a loop.
-    Promise.resolve(ret).then(() => {
-      if (gen !== generation) return;
-      // Pause can land while play() is still resolving. Leave it paused.
-      if (paused) {
-        try { vid.pause(); } catch (e) {}
-        return;
-      }
-      vid.classList.add('on');
-      lastGood = Date.now();
-    }).catch((err) => {
-      if (gen !== generation || paused) return;
-      // Switching clips or pausing aborts the in-flight play(). That is not a bad file.
-      if (err && err.name === 'AbortError') return;
-      if (!vid.muted) {
-        vid.muted = true;
-        wantSound = false;
-        soundBtn.textContent = '\uD83D\uDD07';
-        soundBtn.setAttribute('aria-label', 'Turn sound on');
-        playClip(gen);
-        return;
-      }
-      recover('playback rejected ' + labelOf(clips[index]));
-    });
-  }
-
-  function failureReason(reason) {
-    return reason.indexOf('watchdog') === 0
-      || reason.indexOf('stalled') === 0
-      || reason.indexOf('could not') === 0
-      || reason.indexOf('playback rejected') === 0
-      || reason.indexOf('no frames') === 0
-      || reason.indexOf('no progress') !== -1;
-  }
-
-  function safeReload(reason) {
-    if (reloading) return;
-    note(reason);
+  function requestReload(reason) {
+    if (reloading) return true;
+    // A navigation while offline replaces the board with the browser error page.
+    if (navigator.onLine === false) {
+      reloadDeferred = reason;
+      note('offline defer ' + reason);
+      return false;
+    }
     const last = Number(store.get('vb_reload_at')) || 0;
-    // A clip that kills the page must not reboot the TV every few seconds.
-    if (failureReason(reason) && Date.now() - last < 180000) {
-      timer = clearTimer(timer);
-      stallTimer = clearTimer(stallTimer);
+    if (failureReload(reason) && Date.now() - last < 180000) {
       failures = 0;
-      timer = setTimeout(() => {
-        timer = 0;
-        if (!reloading) show(0);
-      }, 60000);
-      return;
+      note('reload suppressed ' + reason);
+      return false;
     }
     reloading = true;
+    note(reason);
     store.set('vb_reload_at', String(Date.now()));
     store.set('vb_reason', reason);
     if (clips.length) store.set('vb_next', String((index + 1) % clips.length));
-    location.reload();
+    location.replace(bustedLocation());
+    return true;
   }
 
-  function recover(reason) {
+  function skipCurrent(reason) {
     const gen = generation;
     if (failedGen === gen || reloading) return;
     failedGen = gen;
@@ -254,26 +253,28 @@
     setTimeout(() => {
       if (generation !== gen || reloading) return;
       if (reloadDue) {
-        safeReload('scheduled');
-        return;
+        if (requestReload('scheduled')) return;
       }
       failures += 1;
+      publish();
       if (!clips.length) return;
-      if (failures >= clips.length) {
+      if (failures >= FAILURES_BEFORE_RELOAD) {
+        if (requestReload('fail ' + reason)) return;
         failures = 0;
-        safeReload('watchdog ' + reason);
-        return;
       }
       goTo(index + 1);
     }, 0);
   }
 
   function goTo(n) {
+    if (!clips.length) {
+      showEmpty();
+      return;
+    }
     if (fresh && clips.length > 1) {
       const next = ((n % clips.length) + clips.length) % clips.length;
       store.set('vb_next', String(next));
-      location.reload();
-      return;
+      if (requestReload('fresh')) return;
     }
     show(n);
   }
@@ -282,10 +283,40 @@
     if (gen != null && gen !== generation) return;
     if (!clips.length || reloading) return;
     if (!manual && reloadDue) {
-      safeReload('scheduled');
-      return;
+      if (requestReload('scheduled')) return;
     }
     goTo(index + 1);
+  }
+
+  function playClip(gen) {
+    if (gen !== generation || paused || document.hidden || reloading) return;
+    let ret;
+    try { ret = vid.play(); } catch (e) { ret = Promise.reject(e); }
+    // Older TV browsers return undefined from play(). Calling .then on that
+    // throws, and a throw here used to reload the Halloween board in a loop.
+    Promise.resolve(ret).then(() => {
+      if (gen !== generation) return;
+      if (paused || document.hidden) {
+        try { vid.pause(); } catch (e) {}
+        return;
+      }
+      vid.classList.add('on');
+      lastGood = Date.now();
+    }).catch((err) => {
+      if (gen !== generation || paused || reloading) return;
+      // Switching clips or pausing aborts the in-flight play(). That is not a bad file.
+      if (err && err.name === 'AbortError') return;
+      // Autoplay is blocked when the element is audible. Mute and try once more.
+      if (!vid.muted) {
+        vid.muted = true;
+        wantSound = false;
+        soundBtn.textContent = '\uD83D\uDD07';
+        soundBtn.setAttribute('aria-label', 'Turn sound on');
+        playClip(gen);
+        return;
+      }
+      skipCurrent('playback rejected ' + labelOf(clips[index]));
+    });
   }
 
   function show(n) {
@@ -294,8 +325,6 @@
       return;
     }
     const gen = ++generation;
-    timer = clearTimer(timer);
-    stallTimer = clearTimer(stallTimer);
     releaseVideo();
     index = ((n % clips.length) + clips.length) % clips.length;
     const src = clips[index];
@@ -305,42 +334,70 @@
     bar.style.width = '0%';
     lastMediaTime = -1;
     sawFrame = false;
+    lastGood = Date.now();
+    clipStarted = lastGood;
     vid.muted = !wantSound;
     publish();
-
-    vid.onended = () => {
-      if (generation !== gen) return;
-      if ((vid.getAttribute('src') || '') !== expectedSrc) return;
-      failures = 0;
-      lastGood = Date.now();
-      advance(gen);
-    };
-    vid.onerror = () => {
-      const current = vid.getAttribute('src') || '';
-      if (!current || current !== expectedSrc || generation !== gen) return;
-      recover('could not load ' + labelOf(current));
-    };
-    vid.onplaying = () => {
-      if (generation !== gen) return;
-      vid.classList.add('on');
-      lastGood = Date.now();
-    };
     vid.src = src;
-    if (paused) return;
+    // The load algorithm fires abort/emptied before this function returns.
+    setTimeout(() => {
+      if (generation === gen) switching = false;
+    }, 0);
+    if (paused || document.hidden) return;
     playClip(gen);
-    armMax(gen);
-    armStall(gen);
   }
 
   function showEmpty() {
-    timer = clearTimer(timer);
-    stallTimer = clearTimer(stallTimer);
     releaseVideo();
     counter.textContent = window.CLIPS ? 'No clips yet' : 'Playlist missing';
     counter.style.opacity = '1';
     bar.style.width = '0%';
     publish();
   }
+
+  function currentSrcMatches() {
+    return !!expectedSrc && (vid.getAttribute('src') || '') === expectedSrc;
+  }
+
+  function onEnded() {
+    if (switching || reloading || !currentSrcMatches()) return;
+    failures = 0;
+    lastGood = Date.now();
+    publish();
+    advance(generation);
+  }
+
+  function onError() {
+    if (reloading || paused || document.hidden || !currentSrcMatches()) return;
+    skipCurrent('could not load ' + labelOf(expectedSrc));
+  }
+
+  function onStalled() {
+    if (switching || reloading || paused || document.hidden || !currentSrcMatches()) return;
+    if (Date.now() - lastGood < stallSeconds * 1000) return;
+    skipCurrent('stalled ' + labelOf(expectedSrc));
+  }
+
+  function onAbortOrEmptied() {
+    if (switching || reloading || paused || document.hidden || !currentSrcMatches()) return;
+    // Our own source swap fires these with no error. A real abort leaves the
+    // element with no source, or with a media error, and must not sit there.
+    if (!vid.error && vid.networkState !== 3) return;
+    skipCurrent('aborted ' + labelOf(expectedSrc));
+  }
+
+  function onPlaying() {
+    if (reloading || !currentSrcMatches()) return;
+    vid.classList.add('on');
+    lastGood = Date.now();
+  }
+
+  vid.addEventListener('ended', onEnded);
+  vid.addEventListener('error', onError);
+  vid.addEventListener('stalled', onStalled);
+  vid.addEventListener('abort', onAbortOrEmptied);
+  vid.addEventListener('emptied', onAbortOrEmptied);
+  vid.addEventListener('playing', onPlaying);
 
   function togglePause() {
     paused = !paused;
@@ -349,15 +406,13 @@
     publish();
     if (!clips.length) return;
     if (paused) {
-      timer = clearTimer(timer);
-      stallTimer = clearTimer(stallTimer);
       try { vid.pause(); } catch (e) {}
-      if (reloadDue) safeReload('scheduled');
+      if (reloadDue) requestReload('scheduled');
       return;
     }
+    lastGood = Date.now();
+    clipStarted = lastGood;
     playClip(generation);
-    armMax(generation);
-    armStall(generation);
   }
 
   function toggleSound() {
@@ -383,6 +438,7 @@
   };
   addEventListener('keydown', (e) => {
     const key = (e.key || '').toLowerCase();
+    wakeCursor();
     if (key === 'arrowright' || key === ' ') {
       e.preventDefault();
       advance(generation, true);
@@ -394,40 +450,88 @@
     else if (key === 'f') document.getElementById('full').click();
   });
 
+  function wakeCursor() {
+    stage.classList.add('awake');
+    idleTimer = clearTimer(idleTimer);
+    idleTimer = setTimeout(() => {
+      idleTimer = 0;
+      stage.classList.remove('awake');
+    }, IDLE_MS);
+  }
+  stage.addEventListener('mousemove', wakeCursor);
+  stage.addEventListener('touchstart', wakeCursor);
+
+  function onWakeReleased() {
+    wakeLock = null;
+    if (!document.hidden) wake();
+  }
+
   async function wake() {
     if (!('wakeLock' in navigator) || document.hidden) return;
     try {
       if (wakeLock && !wakeLock.released) return;
       wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', onWakeReleased, { once: true });
     } catch (e) {}
   }
 
   function onVisible() {
-    if (document.hidden) return;
+    if (document.hidden) {
+      lastGood = Date.now();
+      clipStarted = Date.now();
+      countdownTimer = clearTimer(countdownTimer);
+      if (!paused) {
+        try { vid.pause(); } catch (e) {}
+      }
+      return;
+    }
     wake();
-    if (!paused && expectedSrc && vid.paused && !reloading) playClip(generation);
+    paintCountdown();
+    scheduleCountdown();
+    if (paused || reloading || !clips.length) return;
+    lastGood = Date.now();
+    clipStarted = Date.now();
+    if (!expectedSrc || vid.error || vid.networkState === 3) show(index);
+    else if (vid.paused) playClip(generation);
   }
 
-  // Tick once a minute instead of one multi-hour timeout. Some TV browsers drop long timers.
-  function watchReload() {
+  function checkReload() {
+    if (reloading) return;
+    if (hardReloadAt && Date.now() >= hardReloadAt) {
+      requestReload('hard');
+      return;
+    }
     if (reloadAt && !reloadDue && Date.now() >= reloadAt) {
       reloadDue = true;
-      if (paused || !clips.length) safeReload('scheduled');
+      publish();
+      if (paused || !clips.length || document.hidden) requestReload('scheduled');
     }
-    setTimeout(watchReload, 60 * 1000);
   }
 
   addEventListener('online', () => {
-    if (Date.now() - booted < 5000 || paused || !clips.length || reloading) return;
-    if (vid.error || vid.networkState === 3) show(index);
+    if (reloading) return;
+    const deferred = reloadDeferred;
+    reloadDeferred = '';
+    if (deferred) {
+      if (requestReload(deferred)) return;
+    }
+    if (Date.now() - booted < 5000 || paused || !clips.length) return;
+    if (vid.error || vid.networkState === 3 || !expectedSrc) show(index);
+    else if (vid.paused && !document.hidden) playClip(generation);
+  });
+
+  addEventListener('offline', () => {
+    note('offline');
   });
 
   // Log script errors. Reloading here caused a reboot loop when play() threw.
   window.onerror = (msg) => { note('error: ' + msg); };
 
+  // One pulse for the stall watchdog, the per-clip cap, and the reload deadlines.
   setInterval(() => {
     if (reloading) return;
-    if (paused || !clips.length || document.hidden) {
+    checkReload();
+    if (document.hidden || paused || !clips.length || !expectedSrc) {
       lastGood = Date.now();
       return;
     }
@@ -438,26 +542,22 @@
     if (vid.currentTime > lastMediaTime + 0.2) {
       lastMediaTime = vid.currentTime;
       lastGood = Date.now();
-      failures = 0;
-      armStall(generation);
+      if (vid.currentTime > 3) failures = 0;
       // Time can move while the decoder paints nothing. A black picture is a bad clip.
       if (!sawFrame && vid.currentTime > 1) {
         if (vid.videoWidth > 0) sawFrame = true;
-        else recover('no frames ' + labelOf(clips[index]));
+        else skipCurrent('no frames ' + labelOf(clips[index]));
       }
-    }
-  }, 250);
-
-  setInterval(() => {
-    if (paused || !clips.length || document.hidden || reloading) {
+    } else if (Date.now() - lastGood >= stallSeconds * 1000) {
       lastGood = Date.now();
+      skipCurrent('no progress ' + labelOf(clips[index]));
       return;
     }
-    if (Date.now() - lastGood > watchdogSeconds * 1000) {
-      lastGood = Date.now();
-      recover('no progress');
+    if (clipStarted && Date.now() - clipStarted >= maxClip * 1000) {
+      clipStarted = Date.now();
+      advance(generation);
     }
-  }, 5000);
+  }, PULSE_MS);
 
   if (debug) {
     const dbg = document.createElement('div');
@@ -487,11 +587,10 @@
   }
 
   paintCountdown();
-  setInterval(paintCountdown, 60 * 1000);
+  scheduleCountdown();
   wake();
   document.addEventListener('visibilitychange', onVisible);
   setInterval(wake, 60000);
-  watchReload();
 
   if (!clips.length) showEmpty();
   else show(startIndex());
