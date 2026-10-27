@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1c33" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%230b1c33' width='16' height='16'/%3E%3Cpath fill='%23f4f7fb' d='M8 2.2l1.3 3.6h3.7l-3 2.3 1.2 3.7L8 9.6 4.8 11.8l1.2-3.7-3-2.3h3.7z'/%3E%3C/svg%3E" />
+  <title>3R Veterans Day Office TV</title>
+  <link rel="stylesheet" href="styles.css?v=20261027a" />
+</head>
+<body>
+  <main id="stage" aria-label="3R Veterans Day office slideshow">
+    <video id="vid" muted autoplay playsinline preload="metadata"></video>
+    <div id="fade"></div>
+    <div id="progress"><span></span></div>
+    <div id="countdown" aria-live="polite"></div>
+    <div id="counter" aria-live="polite"></div>
+    <div id="controls">
+      <button id="prev" type="button" aria-label="Previous clip">◀</button>
+      <button id="pause" type="button" aria-label="Pause slideshow">Ⅱ</button>
+      <button id="next" type="button" aria-label="Next clip">▶</button>
+      <button id="sound" type="button" aria-label="Turn sound on">🔇</button>
+      <button id="full" type="button" aria-label="Fullscreen">⛶</button>
+    </div>
+  </main>
+  <script src="clips.js"></script>
+  <script src="app.js?v=20261027a"></script>
+</body>
+</html>

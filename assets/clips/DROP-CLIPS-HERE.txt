@@ -1,0 +1,3 @@
+Veterans Day office clips live here (MP4, WebM, or MOV).
+The board does not scan this folder. Playback order is the list in clips.js.
+Number files vd00-, vd01-, and so on, then add a matching line to clips.js.
