@@ -54,7 +54,7 @@ Renaming a file does not change the order. The list does.
 
 When you replace a file and keep the same name, change the `?v=` text on that line (any new string). That is the cache buster, same idea as the Halloween board. Leave `?v=` alone when the bytes did not change, or the TV downloads the clip again for no reason.
 
-`app.js` and `styles.css` are linked with `?v=20261027a`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy. You do not need to touch it when you only edit `clips.js`.
+`app.js` is linked with `?v=20261027a` and `styles.css` with `?v=20261027b`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy. You do not need to touch it when you only edit `clips.js`.
 
 ## Keeping the picture moving
 
@@ -64,7 +64,7 @@ After the scheduled reload the page resumes on the next clip, rather than jumpin
 
 ## Encoding
 
-Every shipped clip is the same shape: 1920×1080, 24 fps, 15.0 seconds, H.264 High profile level 4.1, faststart, plus a silent AAC track. The set is about 94 MB. Desktop Chrome plays that.
+Every shipped clip is the same shape: 1920×1080, 24 fps, 15.0 seconds, H.264 High profile level 4.1, faststart, plus a silent AAC track. The set is about 111 MB. Desktop Chrome plays that.
 
 A lot of TVs only hardware-decode Baseline or Main. High profile with B-frames can stay black, which is what the Halloween board ran into. If this TV does that, re-encode on a computer, put the new file in place of the old one, change `?v=`, and push:
 
