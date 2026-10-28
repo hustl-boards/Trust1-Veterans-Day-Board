@@ -7,7 +7,7 @@
 // the new file instead of playing a cached copy. Leave ?v= alone otherwise.
 window.CLIPS = [
   "assets/clips/vd00-title.mp4?v=d7629099e2",
-  "assets/clips/vd01-harriet-tubman.mp4?v=eb717c71f5",
+  "assets/clips/vd01-pat-tillman.mp4?v=01953413a8",
   "assets/clips/vd02-dwight-eisenhower.mp4?v=0793fe7aa1",
   "assets/clips/vd03-rocky-marciano.mp4?v=cfa43e90c2",
   "assets/clips/vd04-ted-williams.mp4?v=b0475f1aff",
@@ -27,5 +27,5 @@ window.CLIPS = [
   "assets/clips/vd18-elvis-presley.mp4?v=b4e1f1511f",
   "assets/clips/vd19-morgan-freeman.mp4?v=ea6aa01d5c",
   "assets/clips/vd20-colin-powell.mp4?v=a1032ce2f8",
-  "assets/clips/vd99-thanks.mp4?v=ea00f9baa0",
+  "assets/clips/vd99-thanks.mp4?v=31a66d9f8b",
 ];
