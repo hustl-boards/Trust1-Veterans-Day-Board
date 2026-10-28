@@ -26,7 +26,7 @@ Right arrow or Space: next · Left arrow: previous · P: pause · M: sound on/of
 
 Clips start muted so Chrome and TV browsers allow autoplay. M, or the sound button, turns sound on. The clips in this set are silent.
 
-Move the pointer to see the controls and the clip count (`3 / 22`). The cursor and the controls hide again after a few seconds of idle. The countdown chip sits in the top-right corner, inside the gold frame, sized so it clears the title line and the faces on the tribute clips. It ticks every second toward Wednesday, November 11, 2026 at 12:00 AM America/New_York, for example `13d 12h 25m 10s until Veterans Day`. The clock is Eastern time no matter what timezone the TV is set to. On November 11 it reads `Today is Veterans Day — thank you for your service`. After that day it keeps `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`. The chip is a fixed size, so the digits changing does not move anything else. It shares the board's one-second pulse and pauses while the document is hidden.
+Move the pointer to see the controls and the clip count (`3 / 22`). The cursor and the controls hide again after a few seconds of idle. The countdown chip sits in the top-right corner, inside the gold frame, sized so it clears the title line and the faces on the tribute clips. It ticks every second toward Wednesday, November 11, 2026 at 12:00 AM America/New_York, for example `13d 12h 25m 10s until Veterans Day`. The clock is Eastern time no matter what timezone the TV is set to. On November 11 it reads `Today is Veterans Day — thank you for your service`. After that day it keeps `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`. The chip is a fixed size, so the digits changing does not move anything else. It shares the board's one-second pulse and pauses while the document is hidden. The Eastern-time formatter is created once. Building a new one on every tick is what leaked memory on the office TV after the live countdown shipped.
 
 ## URL options
 
@@ -53,11 +53,11 @@ Renaming a file does not change the order. The list does.
 
 When you replace a file and keep the same name, change the `?v=` text on that line (any new string). That is the cache buster, same idea as the Halloween board. Leave `?v=` alone when the bytes did not change, or the TV downloads the clip again for no reason.
 
-`app.js` and `styles.css` are linked with `?v=20261028a`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy. You do not need to touch it when you only edit `clips.js`.
+`app.js` and `styles.css` are linked with `?v=20261028b`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy. You do not need to touch it when you only edit `clips.js`.
 
 ## Keeping the picture moving
 
-One `<video>` element is reused. Nothing else creates a second player. Each clip is detached (`pause`, `src` cleared, `load()`) before the next one so the TV can free the decoder. Media listeners are registered once, not on every clip.
+Two `<video>` elements are created once and reused. One plays the current clip. The other holds only the next clip, paused, so the cut does not wait on a cold decoder. Anything else is detached (`pause`, `src` removed, `load()`) before the next file is assigned, including a stray element if something else creates one. Media listeners and the one-second pulse are registered once, not on every clip. A script error or an unhandled rejection skips a stuck clip and, if faults keep coming, arms the between-clip page reload instead of rebooting inside the error handler.
 
 A clip that does not advance for about 8 seconds, or that errors, is skipped. Three skips in a row with no successful playback reload the page. That reload is suppressed for a few minutes if one just happened, so a bad file cannot reboot the TV in a loop. While the network is down the same loop keeps going from cache, and coming back online resumes playback.
 
@@ -67,7 +67,7 @@ After the scheduled reload the page resumes on the next clip, rather than jumpin
 
 ## Encoding
 
-Every shipped clip is the same shape: 1920×1080, 24 fps, 15.0 seconds, H.264 High profile level 4.1, faststart, plus a silent AAC track. The set is about 111 MB. Desktop Chrome plays that.
+Every shipped clip is 1920×1080, 24 fps, 15.0 seconds, faststart, plus a silent AAC track. The set is about 79 MB. The six largest files (Kennedy, the Tuskegee Airmen, the Navajo code talkers, Glenn, Freeman, and Powell) are H.264 Main profile level 4.0 with no B-frames at about 2 Mbps, which is what a memory-limited TV can keep decoded alongside the next clip. The other clips are still H.264 High profile level 4.1. Desktop Chrome plays both.
 
 A lot of TVs only hardware-decode Baseline or Main. High profile with B-frames can stay black, which is what the Halloween board ran into. If this TV does that, re-encode on a computer, put the new file in place of the old one, change `?v=`, and push:
 
