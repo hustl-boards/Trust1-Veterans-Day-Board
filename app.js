@@ -78,7 +78,7 @@
   let reloadDue = false;
   let reloadDeferred = '';
   let switching = false;
-  let countdownTimer = 0;
+  let shownCountdown = '';
   let idleTimer = 0;
   let lastGood = Date.now();
   let lastMediaTime = -1;
@@ -134,6 +134,65 @@
     return nyParts(new Date());
   }
 
+  // Wednesday, November 11, 2026, 12:00 AM America/New_York.
+  // The instant is resolved once. November 2026 is Eastern Standard Time (UTC-5).
+  function wallClockUtc(y, m, d, h, mi, s) {
+    const want = Date.UTC(y, m - 1, d, h, mi, s);
+    let utc = want;
+    let fmt;
+    try {
+      fmt = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        hourCycle: 'h23',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch (e) {
+      return Date.UTC(2026, 10, 11, 5, 0, 0);
+    }
+    for (let n = 0; n < 4; n++) {
+      const bits = fmt.formatToParts(new Date(utc));
+      const grab = (type) => {
+        for (let i = 0; i < bits.length; i++) {
+          if (bits[i].type === type) return Number(bits[i].value);
+        }
+        return 0;
+      };
+      let hour = grab('hour');
+      if (hour === 24) hour = 0;
+      const got = Date.UTC(grab('year'), grab('month') - 1, grab('day'), hour, grab('minute'), grab('second'));
+      const delta = got - want;
+      if (delta === 0) return utc;
+      utc -= delta;
+    }
+    return utc;
+  }
+
+  const VETERANS_AT = wallClockUtc(2026, 11, 11, 0, 0, 0);
+  const AFTER_AT = wallClockUtc(2026, 11, 12, 0, 0, 0);
+
+  function frozenNow() {
+    const raw = params.get('date');
+    if (!raw) return 0;
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+    if (!match) return 0;
+    return wallClockUtc(Number(match[1]), Number(match[2]), Number(match[3]), 0, 0, 0);
+  }
+
+  const FROZEN_NOW = frozenNow();
+
+  function clockNow() {
+    return FROZEN_NOW || Date.now();
+  }
+
+  function pad2(n) {
+    return (n < 10 ? '0' : '') + n;
+  }
+
   // Wednesday, November 11, 2026. After that day the thank-you stays up.
   function daysUntilVeteransDay(parts) {
     const today = Date.UTC(parts.y, parts.m - 1, parts.d);
@@ -141,30 +200,27 @@
     return Math.round((veterans - today) / 86400000);
   }
 
-  function paintCountdown() {
-    const days = daysUntilVeteransDay(activeParts());
-    if (days <= 0) {
-      countdown.textContent = 'HAPPY VETERANS DAY \u2014 THANK YOU FOR YOUR SERVICE';
-      countdown.classList.add('long');
-    } else if (days === 1) {
-      countdown.textContent = '1 DAY UNTIL VETERANS DAY';
-      countdown.classList.remove('long');
-    } else {
-      countdown.textContent = days + ' DAYS UNTIL VETERANS DAY';
-      countdown.classList.remove('long');
-    }
-    publish();
+  function countdownMessage(ms) {
+    if (ms >= AFTER_AT) return 'HAPPY VETERANS DAY \u2014 THANK YOU FOR YOUR SERVICE';
+    if (ms >= VETERANS_AT) return 'Today is Veterans Day \u2014 thank you for your service';
+    let left = VETERANS_AT - ms;
+    if (left < 0) left = 0;
+    const total = Math.floor(left / 1000);
+    const days = Math.floor(total / 86400);
+    const hours = Math.floor((total % 86400) / 3600);
+    const mins = Math.floor((total % 3600) / 60);
+    const secs = total % 60;
+    return days + 'd ' + pad2(hours) + 'h ' + pad2(mins) + 'm ' + pad2(secs) + 's until Veterans Day';
   }
 
-  function scheduleCountdown() {
-    countdownTimer = clearTimer(countdownTimer);
-    if (document.hidden) return;
-    countdownTimer = setTimeout(() => {
-      countdownTimer = 0;
-      if (document.hidden) return;
-      paintCountdown();
-      scheduleCountdown();
-    }, 60 * 1000);
+  function paintCountdown() {
+    const text = countdownMessage(clockNow());
+    if (text === shownCountdown) return;
+    shownCountdown = text;
+    countdown.textContent = text;
+    if (text.indexOf('until Veterans Day') === -1) countdown.classList.add('long');
+    else countdown.classList.remove('long');
+    publish();
   }
 
   function publish() {
@@ -479,7 +535,6 @@
     if (document.hidden) {
       lastGood = Date.now();
       clipStarted = Date.now();
-      countdownTimer = clearTimer(countdownTimer);
       if (!paused) {
         try { vid.pause(); } catch (e) {}
       }
@@ -487,7 +542,6 @@
     }
     wake();
     paintCountdown();
-    scheduleCountdown();
     if (paused || reloading || !clips.length) return;
     lastGood = Date.now();
     clipStarted = Date.now();
@@ -527,8 +581,9 @@
   // Log script errors. Reloading here caused a reboot loop when play() threw.
   window.onerror = (msg) => { note('error: ' + msg); };
 
-  // One pulse for the stall watchdog, the per-clip cap, and the reload deadlines.
+  // One pulse for the countdown, the stall watchdog, the per-clip cap, and the reload deadlines.
   setInterval(() => {
+    if (!document.hidden) paintCountdown();
     if (reloading) return;
     checkReload();
     if (document.hidden || paused || !clips.length || !expectedSrc) {
@@ -587,7 +642,6 @@
   }
 
   paintCountdown();
-  scheduleCountdown();
   wake();
   document.addEventListener('visibilitychange', onVisible);
   setInterval(wake, 60000);

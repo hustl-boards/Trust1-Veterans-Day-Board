@@ -26,7 +26,7 @@ Right arrow or Space: next · Left arrow: previous · P: pause · M: sound on/of
 
 Clips start muted so Chrome and TV browsers allow autoplay. M, or the sound button, turns sound on. The clips in this set are silent.
 
-Move the pointer to see the controls and the clip count (`3 / 22`). The cursor and the controls hide again after a few seconds of idle. The days-until-Veterans-Day chip stays in the corner. It counts down to Wednesday, November 11, 2026, in America/New_York, and reads `15 DAYS UNTIL VETERANS DAY` on October 27. The chip refreshes at most once a minute, including across midnight. On November 11 it reads `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`, and it keeps that thank-you after the day has passed. The day before, it reads `1 DAY UNTIL VETERANS DAY`.
+Move the pointer to see the controls and the clip count (`3 / 22`). The cursor and the controls hide again after a few seconds of idle. The countdown chip sits in the top-right corner, inside the gold frame, sized so it clears the title line and the faces on the tribute clips. It ticks every second toward Wednesday, November 11, 2026 at 12:00 AM America/New_York, for example `13d 12h 25m 10s until Veterans Day`. The clock is Eastern time no matter what timezone the TV is set to. On November 11 it reads `Today is Veterans Day — thank you for your service`. After that day it keeps `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`. The chip is a fixed size, so the digits changing does not move anything else. It shares the board's one-second pulse and pauses while the document is hidden.
 
 ## URL options
 
@@ -35,7 +35,7 @@ Move the pointer to see the controls and the clip count (`3 / 22`). The cursor a
 - `?stall=8` skips a clip whose playback time has not moved for 8 seconds (the default). An error, a real abort, or three of those failures in a row reloads the page. One bad file is skipped and the loop continues. If the network is down, the board keeps trying cached clips instead of navigating to an error page.
 - `?shuffle=1` randomizes the order when the page loads.
 - `?slide=3` starts on that clip (1 is the first).
-- `?date=2026-11-11` previews the countdown for that calendar day.
+- `?date=2026-10-28` previews the countdown as of midnight Eastern on that day. `?date=2026-11-11` shows the Veterans Day line. `?date=2026-11-12` shows the thank-you that stays up afterward.
 - `?fresh=1` loads a new page for every clip. Last resort for a TV that still leaks memory.
 - `?debug=1` shows the clip name, uptime, page loads, and the last problem.
 
@@ -53,7 +53,7 @@ Renaming a file does not change the order. The list does.
 
 When you replace a file and keep the same name, change the `?v=` text on that line (any new string). That is the cache buster, same idea as the Halloween board. Leave `?v=` alone when the bytes did not change, or the TV downloads the clip again for no reason.
 
-`app.js` and `styles.css` are linked with `?v=20261027c`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy. You do not need to touch it when you only edit `clips.js`.
+`app.js` and `styles.css` are linked with `?v=20261028a`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy. You do not need to touch it when you only edit `clips.js`.
 
 ## Keeping the picture moving
 
