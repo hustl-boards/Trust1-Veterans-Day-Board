@@ -23,8 +23,7 @@ body{font-family:Georgia,"Palatino Linotype",Palatino,"Times New Roman",Times,se
 #screen{position:relative;width:min(100%,calc(100vh * 16 / 9));aspect-ratio:16/9;max-height:100%;container-type:inline-size}
 #brand,#mask{position:absolute;box-sizing:border-box;display:none;background:#000;border:0;box-shadow:none;border-radius:2px;overflow:hidden}
 #brand{align-items:center;gap:2.2%;padding:0 1.6%}
-#brand.title,#brand.tribute,#brand.thanks{display:flex}
-#mask.show{display:block}
+#brand.title,#brand.tribute,#brand.thanks,#mask.show{display:none}
 #brand.title,#mask.title{left:24.531%;top:82.13%;width:51.042%;height:11.852%}
 #brand.tribute,#mask.tribute{left:4.635%;top:82.13%;width:51.042%;height:11.852%}
 #brand.thanks,#mask.thanks{left:41.875%;top:82.13%;width:16.146%;height:11.852%;justify-content:center;padding:0 2%}

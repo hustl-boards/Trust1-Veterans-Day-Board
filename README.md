@@ -4,7 +4,7 @@ Static GitHub Pages slideshow for the office TV at Trust 1 Services Plumbing, He
 
 The TV opens <https://hustl-boards.github.io/Trust1-Veterans-Day-Board/>.
 
-The board is one full-screen stage: a thin progress bar, controls that appear when someone moves the pointer, a screen wake lock, and a reload so a TV left on for weeks picks up changes. Clips live in `assets/clips/`. The Trust 1 Services logo sits larger on a solid black plate over each clip's footer. Gold stays in the logo. The countdown, progress bar, and controls are dark and have no gold frame. The line "Thank you to all who served — from Trust 1 Services" sits beside the logo on the title and tribute clips. That line uses a clamped size and can wrap to two balanced lines so the words stay inside the plate. The closing clip keeps the logo plate only. The plate is the same two elements for the life of the page. A clip change reuses them, and the short cover over the previous footer is one timeout, cleared on the next change and when the page hides. `assets/trust-1-services-logo.svg` is the source artwork. `assets/trust1-logo.png` is the render the page shows.
+The board is one full-screen stage: a thin progress bar, controls that appear when someone moves the pointer, a screen wake lock, and a reload so a TV left on for weeks picks up changes. Clips live in `assets/clips/`. Each clip already carries the Trust 1 Services logo in the footer. The title and tribute clips also carry the line "Thank you to all who served — from Trust 1 Services". The closing clip carries the logo only. The page does not draw a second plate over that footer. Gold stays in the logo. The countdown, progress bar, and controls are dark and have no gold frame. `assets/trust-1-services-logo.svg` is the source artwork. `assets/trust1-logo.png` is the render baked into the clips.
 
 ## Publish on GitHub Pages
 
@@ -53,7 +53,7 @@ Renaming a file does not change the order. The list does.
 
 When you replace a file and keep the same name, change the `?v=` text on that line (any new string). That is the cache buster, same idea as the Halloween board. Leave `?v=` alone when the bytes did not change, or the TV downloads the clip again for no reason.
 
-`app.js`, `clips.js`, `styles.css`, and the logo are linked with `?v=20261030g`. The countdown and the sign-off use self-hosted Cinzel (`assets/fonts/Cinzel-SemiBold.ttf`), the same kind of display serif as the title cards. Bump that text in `index.html` when you change those files so the TV does not keep an old copy.
+`app.js`, `clips.js`, `styles.css`, and the logo are linked with `?v=20261030h`. The clip files use the same `?v=20261030h` so a TV downloads the new videos. The countdown uses self-hosted Cinzel (`assets/fonts/Cinzel-SemiBold.ttf`). Bump that text in `index.html` when you change those files so the TV does not keep an old copy.
 
 ## Keeping the picture moving
 
