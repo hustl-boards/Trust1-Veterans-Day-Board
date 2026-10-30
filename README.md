@@ -4,7 +4,7 @@ Static GitHub Pages slideshow for the office TV at Trust 1 Services Plumbing, He
 
 The TV opens <https://hustl-boards.github.io/Trust1-Veterans-Day-Board/>.
 
-The board is one full-screen stage: a thin progress bar, controls that appear when someone moves the pointer, a screen wake lock, and a reload so a TV left on for weeks picks up changes. Clips live in `assets/clips/`. The Trust 1 Services logo sits on a solid dark plate over each clip's footer, with the line "Thank you to all who served — from Trust 1 Services" beside it on the title and tribute clips. That line uses a clamped size and can wrap to two balanced lines so the words stay inside the plate. The closing clip keeps the logo plate only. The plate is the same two elements for the life of the page. A clip change reuses them, and the short cover over the previous footer is one timeout, cleared on the next change and when the page hides. `assets/trust-1-services-logo.svg` is the source artwork. `assets/trust1-logo.png` is the render the page shows.
+The board is one full-screen stage: a thin progress bar, controls that appear when someone moves the pointer, a screen wake lock, and a reload so a TV left on for weeks picks up changes. Clips live in `assets/clips/`. The Trust 1 Services logo sits larger on a solid black plate with a thin gold border over each clip's footer. The gold is the logo's own `#fdb714`, with `#c4a11b` beside it. The same black and gold is used for the countdown, the progress bar, and the controls. The line "Thank you to all who served — from Trust 1 Services" sits beside the logo on the title and tribute clips. That line uses a clamped size and can wrap to two balanced lines so the words stay inside the plate. The closing clip keeps the logo plate only. The plate is the same two elements for the life of the page. A clip change reuses them, and the short cover over the previous footer is one timeout, cleared on the next change and when the page hides. `assets/trust-1-services-logo.svg` is the source artwork. `assets/trust1-logo.png` is the render the page shows.
 
 ## Publish on GitHub Pages
 
@@ -53,7 +53,7 @@ Renaming a file does not change the order. The list does.
 
 When you replace a file and keep the same name, change the `?v=` text on that line (any new string). That is the cache buster, same idea as the Halloween board. Leave `?v=` alone when the bytes did not change, or the TV downloads the clip again for no reason.
 
-`app.js`, `clips.js`, `styles.css`, and the logo are linked with `?v=20261030d`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy.
+`app.js`, `clips.js`, `styles.css`, and the logo are linked with `?v=20261030e`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy.
 
 ## Keeping the picture moving
 
