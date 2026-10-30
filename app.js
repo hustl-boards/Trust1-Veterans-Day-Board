@@ -301,11 +301,8 @@
     return FROZEN_NOW || Date.now();
   }
 
-  function pad2(n) {
-    return (n < 10 ? '0' : '') + n;
-  }
-
   // Wednesday, November 11, 2026. After that day the thank-you stays up.
+  // Whole calendar days in America/New_York, not a floor of the remaining hours.
   function daysUntilVeteransDay(parts) {
     const today = Date.UTC(parts.y, parts.m - 1, parts.d);
     const veterans = Date.UTC(2026, 10, 11);
@@ -315,14 +312,9 @@
   function countdownMessage(ms) {
     if (ms >= AFTER_AT) return 'HAPPY VETERANS DAY \u2014 THANK YOU FOR YOUR SERVICE';
     if (ms >= VETERANS_AT) return 'Happy Veterans Day / Today';
-    let left = VETERANS_AT - ms;
-    if (left < 0) left = 0;
-    const total = Math.floor(left / 1000);
-    const days = Math.floor(total / 86400);
-    const hours = Math.floor((total % 86400) / 3600);
-    const mins = Math.floor((total % 3600) / 60);
-    const secs = total % 60;
-    return days + 'd ' + pad2(hours) + 'h ' + pad2(mins) + 'm ' + pad2(secs) + 's until Veterans Day';
+    let days = daysUntilVeteransDay(activeParts());
+    if (days < 1) days = 1;
+    return (days === 1 ? '1 day' : days + ' days') + ' until Veterans Day';
   }
 
   function paintCountdown() {
@@ -869,7 +861,8 @@
     pulseCount += 1;
     try {
       fitScreen();
-      if (!document.hidden) paintCountdown();
+      // Day count changes at Eastern midnight. Once a minute is enough.
+      if (!document.hidden && pulseCount % 60 === 0) paintCountdown();
       if (pulseCount % 60 === 0) wake();
       if (reloading) return;
       checkReload();

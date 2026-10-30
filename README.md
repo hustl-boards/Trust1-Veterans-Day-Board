@@ -26,7 +26,7 @@ Right arrow or Space: next · Left arrow: previous · P: pause · M: sound on/of
 
 Clips start muted so Chrome and TV browsers allow autoplay. M, or the sound button, turns sound on. The clips in this set are silent.
 
-Move the pointer to see the controls and the clip count (`3 / 22`). The cursor and the controls hide again after a few seconds of idle. The countdown chip sits in the top-right corner, inside the gold frame, sized so it clears the title line and the faces on the tribute clips. It ticks every second toward Wednesday, November 11, 2026 at 12:00 AM America/New_York, for example `13d 12h 25m 10s until Veterans Day`. The clock is Eastern time no matter what timezone the TV is set to. On November 11 it reads `Happy Veterans Day / Today`. After that day it keeps `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`. The chip is a fixed size, so the digits changing does not move anything else. It shares the board's one-second pulse and pauses while the document is hidden. The Eastern-time formatter is created once. Building a new one on every tick is what leaked memory on the office TV after the live countdown shipped.
+Move the pointer to see the controls and the clip count (`3 / 22`). The cursor and the controls hide again after a few seconds of idle. The countdown chip sits in the top-right corner, inside the gold frame, sized so it clears the title line and the faces on the tribute clips. It shows whole calendar days until Wednesday, November 11, 2026 in America/New_York, for example `12 days until Veterans Day`, and `1 day until Veterans Day` on November 10. The clock is Eastern time no matter what timezone the TV is set to. On November 11 it reads `Happy Veterans Day / Today`. After that day it keeps `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`. The chip is a fixed size, so the digits changing does not move anything else. It refreshes about once a minute on the board's pulse and pauses while the document is hidden. The Eastern-time formatter is created once. Building a new one on every tick is what leaked memory on the office TV after the live countdown shipped.
 
 ## URL options
 
@@ -53,7 +53,7 @@ Renaming a file does not change the order. The list does.
 
 When you replace a file and keep the same name, change the `?v=` text on that line (any new string). That is the cache buster, same idea as the Halloween board. Leave `?v=` alone when the bytes did not change, or the TV downloads the clip again for no reason.
 
-`app.js`, `clips.js`, `styles.css`, and the logo are linked with `?v=20261030a`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy.
+`app.js`, `clips.js`, `styles.css`, and the logo are linked with `?v=20261030c`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy.
 
 ## Keeping the picture moving
 
