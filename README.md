@@ -4,7 +4,7 @@ Static GitHub Pages slideshow for the office TV at Trust 1 Services Plumbing, He
 
 The TV opens <https://hustl-boards.github.io/Trust1-Veterans-Day-Board/>.
 
-The board is one full-screen stage: a thin progress bar, controls that appear when someone moves the pointer, a screen wake lock, and a reload so a TV left on for weeks picks up changes. Clips live in `assets/clips/`. The Trust 1 Services logo sits on a solid dark plate over each clip's footer, with the line "Thank you to all who served — from Trust 1 Services" beside it on the title and tribute clips. The plate is the same two elements for the life of the page. A clip change reuses them, and the short cover over the previous footer is one timeout, cleared on the next change and when the page hides. `assets/trust-1-services-logo.svg` is the source artwork. `assets/trust1-logo.png` is the render the page shows.
+The board is one full-screen stage: a thin progress bar, controls that appear when someone moves the pointer, a screen wake lock, and a reload so a TV left on for weeks picks up changes. Clips live in `assets/clips/`. The Trust 1 Services logo sits on a solid dark plate over each clip's footer, with the line "Thank you to all who served — from Trust 1 Services" beside it on the title and tribute clips. That line uses a clamped size and can wrap to two balanced lines so the words stay inside the plate. The closing clip keeps the logo plate only. The plate is the same two elements for the life of the page. A clip change reuses them, and the short cover over the previous footer is one timeout, cleared on the next change and when the page hides. `assets/trust-1-services-logo.svg` is the source artwork. `assets/trust1-logo.png` is the render the page shows.
 
 ## Publish on GitHub Pages
 
@@ -26,7 +26,7 @@ Right arrow or Space: next · Left arrow: previous · P: pause · M: sound on/of
 
 Clips start muted so Chrome and TV browsers allow autoplay. M, or the sound button, turns sound on. The clips in this set are silent.
 
-Move the pointer to see the controls and the clip count (`3 / 22`). The cursor and the controls hide again after a few seconds of idle. The countdown chip sits in the top-right corner, inside the gold frame, sized so it clears the title line and the faces on the tribute clips. It shows whole calendar days until Wednesday, November 11, 2026 in America/New_York, for example `12 days until Veterans Day`, and `1 day until Veterans Day` on November 10. The clock is Eastern time no matter what timezone the TV is set to. On November 11 it reads `Happy Veterans Day / Today`. After that day it keeps `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`. The chip is a fixed size, so the digits changing does not move anything else. It refreshes about once a minute on the board's pulse and pauses while the document is hidden. The Eastern-time formatter is created once. Building a new one on every tick is what leaked memory on the office TV after the live countdown shipped.
+Move the pointer to see the controls and the clip count (`3 / 22`). The cursor and the controls hide again after a few seconds of idle. The countdown chip sits in the top-right, inset about 5% from the screen edge so television overscan does not crop it, and inside the gold frame so it clears the title line and the faces on the tribute clips. It shows whole calendar days until Wednesday, November 11, 2026 in America/New_York, for example `12 days until Veterans Day`, and `1 day until Veterans Day` on November 10. The clock is Eastern time no matter what timezone the TV is set to. On November 11 it reads `Happy Veterans Day / Today`. After that day it keeps `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`. The chip is a fixed size, so the digits changing does not move anything else. It refreshes about once a minute on the board's pulse and pauses while the document is hidden. The Eastern-time formatter is created once. Building a new one on every tick is what leaked memory on the office TV after the live countdown shipped.
 
 ## URL options
 
@@ -53,7 +53,7 @@ Renaming a file does not change the order. The list does.
 
 When you replace a file and keep the same name, change the `?v=` text on that line (any new string). That is the cache buster, same idea as the Halloween board. Leave `?v=` alone when the bytes did not change, or the TV downloads the clip again for no reason.
 
-`app.js`, `clips.js`, `styles.css`, and the logo are linked with `?v=20261030c`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy.
+`app.js`, `clips.js`, `styles.css`, and the logo are linked with `?v=20261030d`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy.
 
 ## Keeping the picture moving
 

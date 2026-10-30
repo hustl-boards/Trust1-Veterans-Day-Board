@@ -38,7 +38,6 @@
   const screenBox = document.getElementById('screen');
   const brand = document.getElementById('brand');
   const mask = document.getElementById('mask');
-  const signoff = document.getElementById('signoff');
   const logo = document.getElementById('logo');
 
   const store = {
@@ -187,7 +186,6 @@
     fitH = h;
     screenBox.style.width = w + 'px';
     screenBox.style.height = h + 'px';
-    if (signoff) signoff.style.fontSize = Math.max(13, Math.round(w * 0.0132)) + 'px';
   }
 
   function activeEl() {
