@@ -35,6 +35,11 @@
   const countdown = document.getElementById('countdown');
   const pauseBtn = document.getElementById('pause');
   const soundBtn = document.getElementById('sound');
+  const screenBox = document.getElementById('screen');
+  const brand = document.getElementById('brand');
+  const mask = document.getElementById('mask');
+  const signoff = document.getElementById('signoff');
+  const logo = document.getElementById('logo');
 
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -94,6 +99,10 @@
   let switching = false;
   let shownCountdown = '';
   let idleTimer = 0;
+  let plateTimer = 0;
+  let plateMode = '';
+  let fitW = 0;
+  let fitH = 0;
   let lastGood = Date.now();
   let lastMediaTime = -1;
   let clipStarted = 0;
@@ -127,6 +136,58 @@
     const path = (src || '').split('?')[0];
     const parts = path.split('/');
     return parts[parts.length - 1] || src || 'clip';
+  }
+
+  // Footer plate. Title, tribute, and closing clips put the lockup in different
+  // places, so the plate moves. The mask keeps the previous spot covered while
+  // the outgoing clip fades. One timeout, cleared on the next change.
+  function brandMode(src) {
+    const name = labelOf(src);
+    if (name.indexOf('vd00') === 0) return 'title';
+    if (name.indexOf('vd99') === 0) return 'thanks';
+    return 'tribute';
+  }
+
+  function setBrand(src) {
+    if (!brand || !mask) return;
+    if (!src) {
+      plateTimer = clearTimer(plateTimer);
+      plateMode = '';
+      brand.className = '';
+      mask.className = '';
+      return;
+    }
+    const mode = brandMode(src);
+    if (mode === plateMode) return;
+    if (plateMode) {
+      mask.className = plateMode + ' show';
+      plateTimer = clearTimer(plateTimer);
+      plateTimer = setTimeout(() => {
+        plateTimer = 0;
+        mask.className = '';
+      }, 700);
+    }
+    plateMode = mode;
+    brand.className = mode;
+  }
+
+  function fitScreen() {
+    if (!screenBox) return;
+    const vw = document.documentElement.clientWidth || window.innerWidth;
+    const vh = document.documentElement.clientHeight || window.innerHeight;
+    if (!vw || !vh) return;
+    let w = vw;
+    let h = Math.round(w * 9 / 16);
+    if (h > vh) {
+      h = vh;
+      w = Math.round(h * 16 / 9);
+    }
+    if (w === fitW && h === fitH) return;
+    fitW = w;
+    fitH = h;
+    screenBox.style.width = w + 'px';
+    screenBox.style.height = h + 'px';
+    if (signoff) signoff.style.fontSize = Math.max(13, Math.round(w * 0.0132)) + 'px';
   }
 
   function activeEl() {
@@ -253,7 +314,7 @@
 
   function countdownMessage(ms) {
     if (ms >= AFTER_AT) return 'HAPPY VETERANS DAY \u2014 THANK YOU FOR YOUR SERVICE';
-    if (ms >= VETERANS_AT) return 'Today is Veterans Day \u2014 thank you for your service';
+    if (ms >= VETERANS_AT) return 'Happy Veterans Day / Today';
     let left = VETERANS_AT - ms;
     if (left < 0) left = 0;
     const total = Math.floor(left / 1000);
@@ -269,7 +330,7 @@
     if (text === shownCountdown) return;
     shownCountdown = text;
     countdown.textContent = text;
-    if (text.indexOf('until Veterans Day') === -1) countdown.classList.add('long');
+    if (text.indexOf('until Veterans Day') === -1 && text !== 'Happy Veterans Day / Today') countdown.classList.add('long');
     else countdown.classList.remove('long');
     publish();
   }
@@ -501,6 +562,7 @@
     switching = true;
     index = ((n % clips.length) + clips.length) % clips.length;
     const src = clips[index];
+    setBrand(src);
     const nextSrc = clips.length > 1 ? clips[(index + 1) % clips.length] : '';
     const slot = pickSlot(src);
 
@@ -549,6 +611,7 @@
 
   function showEmpty() {
     releaseAll();
+    setBrand('');
     counter.textContent = window.CLIPS ? 'No clips yet' : 'Playlist missing';
     counter.style.opacity = '1';
     bar.style.width = '0%';
@@ -775,8 +838,18 @@
   });
 
   addEventListener('pagehide', () => {
+    plateTimer = clearTimer(plateTimer);
     for (let i = 0; i < players.length; i++) blankSlot(i);
   });
+
+  if (logo) {
+    logo.addEventListener('error', function onLogoError() {
+      logo.removeEventListener('error', onLogoError);
+      logo.removeAttribute('src');
+      logo.alt = '';
+      logo.style.display = 'none';
+    });
+  }
 
   window.onerror = (msg) => {
     recoverFromScript(msg);
@@ -795,6 +868,7 @@
   setInterval(() => {
     pulseCount += 1;
     try {
+      fitScreen();
       if (!document.hidden) paintCountdown();
       if (pulseCount % 60 === 0) wake();
       if (reloading) return;
@@ -869,6 +943,7 @@
     return 0;
   }
 
+  fitScreen();
   paintCountdown();
   wake();
   document.addEventListener('visibilitychange', onVisible);

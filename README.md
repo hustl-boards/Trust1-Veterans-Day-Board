@@ -1,10 +1,10 @@
-# 3R Veterans Day Office TV
+# Trust 1 Services Veterans Day Office TV
 
-Static GitHub Pages slideshow for the office TV. Twenty-two silent 15-second clips play in order, each through to the end, then the loop starts over.
+Static GitHub Pages slideshow for the office TV at Trust 1 Services Plumbing, Heating and Air Conditioning in Quincy and Hanover, Massachusetts. Twenty-two silent 15-second clips play in order, each through to the end, then the loop starts over.
 
-The TV opens <https://ross680.github.io/Veterans-Day-Office-Board/>.
+The TV opens <https://hustl-boards.github.io/Trust1-Veterans-Day-Board/>.
 
-It follows the same full-screen board as the [Christmas Board](https://github.com/ross680/Christmas-Office-Board), the [Motivational Board](https://github.com/ross680/Motivational-Board), and the [Halloween Board](https://github.com/ross680/Halloween-Board): one stage, a thin progress bar, controls that appear when someone moves the pointer, a screen wake lock, and a reload so a TV left on for weeks picks up changes. Clips live in `assets/clips/`.
+The board is one full-screen stage: a thin progress bar, controls that appear when someone moves the pointer, a screen wake lock, and a reload so a TV left on for weeks picks up changes. Clips live in `assets/clips/`. The Trust 1 Services logo sits on a solid dark plate over each clip's footer, with the line "Thank you to all who served — from Trust 1 Services" beside it on the title and tribute clips. The plate is the same two elements for the life of the page. A clip change reuses them, and the short cover over the previous footer is one timeout, cleared on the next change and when the page hides. `assets/trust-1-services-logo.svg` is the source artwork. `assets/trust1-logo.png` is the render the page shows.
 
 ## Publish on GitHub Pages
 
@@ -14,7 +14,7 @@ The page is a normal static site. It does not call the GitHub API.
 2. In GitHub: **Settings → Pages**.
 3. Under **Build and deployment**, set **Source** to **Deploy from a branch**.
 4. Branch: **main**. Folder: **/** (root).
-5. Open <https://ross680.github.io/Veterans-Day-Office-Board/> on the TV browser.
+5. Open <https://hustl-boards.github.io/Trust1-Veterans-Day-Board/> on the TV browser.
 
 Pages can take a minute after the push. The TV may keep the previous `index.html` for about 10 minutes. The board reloads itself every 4 hours, after the current clip finishes, and again about 15 minutes later if that ending never comes. The reload URL carries a fresh `v=` value so the TV asks for the new page instead of a cached copy.
 
@@ -26,7 +26,7 @@ Right arrow or Space: next · Left arrow: previous · P: pause · M: sound on/of
 
 Clips start muted so Chrome and TV browsers allow autoplay. M, or the sound button, turns sound on. The clips in this set are silent.
 
-Move the pointer to see the controls and the clip count (`3 / 22`). The cursor and the controls hide again after a few seconds of idle. The countdown chip sits in the top-right corner, inside the gold frame, sized so it clears the title line and the faces on the tribute clips. It ticks every second toward Wednesday, November 11, 2026 at 12:00 AM America/New_York, for example `13d 12h 25m 10s until Veterans Day`. The clock is Eastern time no matter what timezone the TV is set to. On November 11 it reads `Today is Veterans Day — thank you for your service`. After that day it keeps `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`. The chip is a fixed size, so the digits changing does not move anything else. It shares the board's one-second pulse and pauses while the document is hidden. The Eastern-time formatter is created once. Building a new one on every tick is what leaked memory on the office TV after the live countdown shipped.
+Move the pointer to see the controls and the clip count (`3 / 22`). The cursor and the controls hide again after a few seconds of idle. The countdown chip sits in the top-right corner, inside the gold frame, sized so it clears the title line and the faces on the tribute clips. It ticks every second toward Wednesday, November 11, 2026 at 12:00 AM America/New_York, for example `13d 12h 25m 10s until Veterans Day`. The clock is Eastern time no matter what timezone the TV is set to. On November 11 it reads `Happy Veterans Day / Today`. After that day it keeps `HAPPY VETERANS DAY — THANK YOU FOR YOUR SERVICE`. The chip is a fixed size, so the digits changing does not move anything else. It shares the board's one-second pulse and pauses while the document is hidden. The Eastern-time formatter is created once. Building a new one on every tick is what leaked memory on the office TV after the live countdown shipped.
 
 ## URL options
 
@@ -53,7 +53,7 @@ Renaming a file does not change the order. The list does.
 
 When you replace a file and keep the same name, change the `?v=` text on that line (any new string). That is the cache buster, same idea as the Halloween board. Leave `?v=` alone when the bytes did not change, or the TV downloads the clip again for no reason.
 
-`app.js` and `styles.css` are linked with `?v=20261028b`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy. You do not need to touch it when you only edit `clips.js`.
+`app.js`, `clips.js`, `styles.css`, and the logo are linked with `?v=20261030a`. Bump that text in `index.html` when you change those files so the TV does not keep an old copy.
 
 ## Keeping the picture moving
 
